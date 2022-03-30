@@ -5,12 +5,18 @@ from django.views.generic import CreateView, UpdateView, DeleteView, DetailView,
 from .models import Post, Comment
 from .forms import PostForm, CommentForm
 from datetime import datetime
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 
-class PostCreateView(CreateView):
+class PostCreateView(LoginRequiredMixin, CreateView):
     form_class = PostForm
     template_name = 'post_form.html'
     success_url = reverse_lazy('post_list')
+
+    def form_valid(self, form):
+        form.instance.user = self.request.user
+        form.instance.date_posted = datetime.now()
+        return super(PostCreateView, self).form_valid(form)
 
 
 class PostListView(ListView):
@@ -26,10 +32,16 @@ class PostDetailView(DetailView):
         context['comments'] = Comment.objects.filter(post=self.get_object())
         return context
 
-class PostUpdateView(UpdateView):
+class PostUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     model = Post
     form_class = PostForm
     template_name = 'post_form.html'
+
+    def test_func(self):
+        if self.request.user == self.get_object().user:
+            return True
+        else:
+            return False
 
 
 class CommentCreateView(CreateView):
