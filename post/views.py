@@ -4,6 +4,7 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, UpdateView, DeleteView, DetailView, ListView
 from .models import Post, Comment
 from .forms import PostForm, CommentForm
+from datetime import datetime
 
 
 class PostCreateView(CreateView):
@@ -36,4 +37,9 @@ class CommentCreateView(CreateView):
     template_name = 'comment_form.html'
     success_url = reverse_lazy('post_list')
 
+    def form_valid(self, form):
+        form.instance.post = Post.objects.get(id=self.kwargs['pk'])
+        form.instance.user = self.request.user
+        form.instance.date_posted = datetime.now()
+        return super(CommentCreateView, self).form_valid(form)
 
